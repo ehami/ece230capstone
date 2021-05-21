@@ -32,10 +32,12 @@
 #include <lcd8bitsece230.h>
 #include <ece230CapConfigurations.h>
 #include <ece230CapSubroutines.h>
-static volatile uint16_t characterSelectionfromA5;
-static volatile uint8_t index = 0;
-static volatile char currentChar;
+static uint16_t characterSelectionfromA5;
+static uint8_t index = 0;
+static char currentChar;
 static char currentMessage[] = "                ";	// 16 + NT
+static bool sendMessageFlag = false;
+static bool receiveMessageFlag = false;
 
 
 //#define VDD 26
@@ -62,6 +64,7 @@ void displayRxMessage(char* message) {
 	for(i = 0; i < 16; i++) {
 		line2buf[i] = message[i];
 	}
+	receiveMessageFlag = true;
 
 	i = 0;
 	while(message[i] != '\n' && message[i] != '\r' && message[i] != '\0') {
@@ -81,6 +84,7 @@ void sendMessage(char* message) {
 	MAP_UART_transmitData(BT_EUSCI_MODULE, '\n');
 
 	PlaySendNotification();
+	sendMessageFlag = true;
 }
 
 
@@ -123,26 +127,41 @@ int main(void) {
 
     MAP_Interrupt_enableMaster(); //not necessary
 
+    int count;
+
 
     while(1)
     {
+        if (sendMessageFlag) {
+            lcd_SetLineNumber(FirstLine);
+            lcd_puts("  Message Sent  ");
+            for(count = 0; count < 400000; count++);
+            count = 0;
+            while (count < 16) {
+                currentMessage[count] = ' ';
+                count++;
+            }
+            sendMessageFlag = false;
+            index = 0;
+        }
+
+        if (receiveMessageFlag) {
+            lcd_SetLineNumber(SecondLine);
+            lcd_puts("Message Received");
+            for(count = 0; count < 400000; count++);
+            receiveMessageFlag = false;
+        }
     	// Update current message string
     	currentMessage[index] = characterSelectionfromA5;
     	//set LCD display on Line 1
     	lcd_SetLineNumber(FirstLine);
     	//display digital on Line 1 of LCD
     	lcd_puts(currentMessage);
-
-
-    	int count;
-    	for(count = 0; count < 50000; count++)
-    		;
+    	for(count = 0; count < 50000; count++);
 
     	lcd_SetLineNumber(SecondLine);
     	lcd_puts(line2buf);
-
-    	for(count = 0; count < 50000; count++)
-    		;
+    	for(count = 0; count < 50000; count++);
     } //end while(1)
 } //end main()
 
@@ -232,7 +251,7 @@ void EUSCIA1_IRQHandler() {
     	} if (btChar == '\n') {
     		btIndex = 0;
     		displayRxMessage(btStr);
-    		PlayRecieveNotification();
+    		PlayReceiveNotification();
     		int i;
     		for(i = 0; i < 16; i++) {
     			btStr[i] = ' ';
