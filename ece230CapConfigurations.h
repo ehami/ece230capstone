@@ -21,6 +21,6 @@ void ConfigurePort3Interrupts(void);
 void ConfigureA4ATD(void);
 void configureUsbSerial();
 void configureBluetoothSerial();
-
+void configurePortTwo();
 
 #endif /* ECE230CAPSTONECONFIGURATIONS_H_ */

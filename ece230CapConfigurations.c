@@ -72,12 +72,6 @@ const Timer_A_CompareModeConfig compareModeConfig = {
  * Note waveform generation with Timer A0 up mode and CCR0 compare toggle
  */
 void ConfigureTimerA0PWM(void) {
-    // Configure Pin 2.4 for PWM Output
-    MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(
-            GPIO_PORT_P2,
-            GPIO_PIN4,
-            GPIO_PRIMARY_MODULE_FUNCTION);
-
     // Initialize compare registers to generate PWM1
     MAP_Timer_A_initCompare(TIMER_A0_BASE, &compareModeConfig);
 
@@ -202,19 +196,6 @@ void ConfigureA4ATD() {
     MAP_ADC14_toggleConversionTrigger();
 }
 
-
-/* Port mapping for RXD/TXD for Bluetooth, and Speaker PWM Wave */
-const uint8_t portMapP2[] = {
-        PMAP_NONE, 		// 0
-        PMAP_NONE,
-        PMAP_NONE,
-        PMAP_UCA1RXD, 	// P2.3 (34): RXD
-        PMAP_TA0CCR0A,  // 2.4 (38): Speaker PWM Wave
-        PMAP_UCA1TXD, 	// P2.5 (19): TXD
-        PMAP_NONE,
-        PMAP_NONE
-        };
-
 /* Port 2 USB UART Configuration Parameter */
 const eUSCI_UART_ConfigV1 usbUartConfig = {
         EUSCI_A_UART_CLOCKSOURCE_SMCLK,                 // SMCLK Clock Source
@@ -234,11 +215,7 @@ const eUSCI_UART_ConfigV1 usbUartConfig = {
  * http://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSP430BaudRateConverter/index.html
  *
  */
-void configureUsbSerial()
-{
-    MAP_PMAP_configurePorts((const uint8_t*) portMapP2, PMAP_P2MAP, 1,
-    PMAP_DISABLE_RECONFIGURATION);
-
+void configureUsbSerial() {
     /* Selecting P1.2 and P1.3 in UART mode */
     MAP_GPIO_setAsPeripheralModuleFunctionInputPin(
             GPIO_PORT_P1,
@@ -273,17 +250,39 @@ const eUSCI_UART_ConfigV1 btUartConfig = {
  *
  */
 void configureBluetoothSerial() {
-    MAP_PMAP_configurePorts((const uint8_t*) portMapP2, PMAP_P2MAP, 1,
-    PMAP_DISABLE_RECONFIGURATION);
-
-    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(
-            GPIO_PORT_P2,
-            GPIO_PIN3 | GPIO_PIN5,
-            GPIO_PRIMARY_MODULE_FUNCTION);
-
     MAP_UART_initModule(BT_EUSCI_MODULE, &btUartConfig);
     MAP_UART_enableModule(BT_EUSCI_MODULE);
 
     MAP_UART_enableInterrupt(BT_EUSCI_MODULE, EUSCI_A_UART_RECEIVE_INTERRUPT);
     MAP_Interrupt_enableInterrupt(INT_EUSCIA1);
+}
+
+/* Port mapping for RXD/TXD for Bluetooth, and Speaker PWM Wave */
+const uint8_t portMapP2[] = {
+        PMAP_NONE, 		// P2.0
+        PMAP_NONE,
+        PMAP_NONE,
+        PMAP_UCA1RXD, 	// P2.3 (34): RXD
+        PMAP_TA0CCR0A,  // 2.4 (38): Speaker PWM Wave
+        PMAP_UCA1TXD, 	// P2.5 (19): TXD
+        PMAP_NONE,
+        PMAP_NONE
+};
+
+
+void configurePortTwo() {
+    MAP_PMAP_configurePorts((const uint8_t*) portMapP2, PMAP_P2MAP, 1,
+    PMAP_DISABLE_RECONFIGURATION);
+
+    // Configure Pin 2.3, 2.5 for UART RX/TX
+    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(
+            GPIO_PORT_P2,
+            GPIO_PIN3 | GPIO_PIN5,
+            GPIO_PRIMARY_MODULE_FUNCTION);
+
+    // Configure Pin 2.4 for PWM Output
+    MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(
+            GPIO_PORT_P2,
+            GPIO_PIN4,
+            GPIO_PRIMARY_MODULE_FUNCTION);
 }

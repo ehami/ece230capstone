@@ -189,6 +189,7 @@ int main(void)
 
     DisplayProjectName();
 
+    configurePortTwo();
     configureUsbSerial();
     configureBluetoothSerial();
 
@@ -328,41 +329,45 @@ void EUSCIA0_IRQHandler() {
 
         if (usbChar == '\r') {
             // do nothing
-        }
-
-        if (usbChar == '\n') {
-            usbIndex = 0;
+        } else if (usbChar == '\n') {
+        	// display message & clear buffer storage
             sendMessage(usbStr);
+            usbIndex = 0;
+
         } else {
+        	// Permute message to show overfilling (~ at start)
             if (usbIndex > 15) {
                 usbIndex = 1;
                 usbStr[0] = '~';
             }
             usbStr[usbIndex++] = usbChar;
         }
+
+        MAP_UART_clearInterruptFlag(USB_EUSCI_MODULE, EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG);
     }
 }
 
+
 /* Bluetooth UART ISR */
-void EUSCIA1_IRQHandler()
-{
+void EUSCIA1_IRQHandler() {
     uint32_t status = MAP_UART_getEnabledInterruptStatus(BT_EUSCI_MODULE);
 
+    // Should handle interupt
     if (status & EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG) {
         char btChar = (char) MAP_UART_receiveData(BT_EUSCI_MODULE);
 
         if (btChar == '\r') {
             // do nothing
-        }
-
-        if (btChar == '\n') {
-            btIndex = 0;
+        } else if (btChar == '\n') {
+        	// display message & clear buffer storage
             displayRxMessage(btStr);
+            btIndex = 0;
             int i;
             for (i = 0; i < 16; i++) {
                 btStr[i] = ' ';
             }
         } else {
+        	// Permute message to show overfilling (~ at start)
             if (btIndex > 15) {
                 btStr[0] = '~';
                 btIndex = 1;
@@ -370,5 +375,7 @@ void EUSCIA1_IRQHandler()
 
             btStr[btIndex++] = btChar;
         }
+
+        MAP_UART_clearInterruptFlag(BT_EUSCI_MODULE, EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG);
     }
 }
